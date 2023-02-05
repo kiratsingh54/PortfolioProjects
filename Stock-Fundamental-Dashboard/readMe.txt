@@ -9,4 +9,4 @@ some of the data received from the API call. So for example, if you search for A
 and then look up AAPL again, this time no API call will be made, rather data will be pulled from cahce depending on the 
 info requested.
 - Requests for stats and news are making API calls everytime for the most up-to-date information.
-- Cached information will expire after 24 hours and an API call will be made if info is requested. 
+- Cached information will expire after 24 hours and an API call will be made if info is requested.  
