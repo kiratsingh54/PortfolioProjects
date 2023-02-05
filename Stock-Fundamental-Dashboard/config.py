@@ -1,0 +1,1 @@
+IEX_API_TOKEN = 'sk_026bf244a0c24834bbde8b21645ae1e3'
