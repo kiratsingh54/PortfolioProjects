@@ -1,4 +1,4 @@
-Run py -m streamlit run dashboard.py in the directory
+Run py -m streamlit run main.py in the directory
 Once the code is up and running, open http://localhost:8501/ in your browser to interact with the program.
 
 Program Overview:
