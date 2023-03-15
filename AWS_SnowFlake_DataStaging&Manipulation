@@ -1,0 +1,77 @@
+CREATE OR REPLACE STORAGE INTEGRATION aws_s3_integration             //Integrating AWS with SnowFlake
+type = external_stage 
+storage_provider = 'S3' 
+storage_aws_role_arn = 'arn:aws:iam::739217993621:role/developer' 
+storage_allowed_locations = ('s3://portfolio-project-gk/');
+
+SHOW INTEGRATIONS;
+
+DESC INTEGRATION aws_s3_integration;
+
+GRANT usage on INTEGRATION aws_s3_integration to role accountadmin; //Granting access to certain roles
+
+create or replace file format demo_format                           //Specifying file format
+type = 'CSV' 
+field_delimiter = '|' 
+skip_header = 1;
+
+create or replace stage demo_aws_storage                            //Create staging area for data in AWS
+storage_integration = aws_s3_integration 
+file_format = demo_format 
+url = 's3://portfolio-project-gk/';
+
+List @demo_aws_storage;                                             //We can see and manipulates files from SnowFlake
+remove @demo_aws_storage/SalesData.csv;
+
+
+Create temporary table demo_sales_data (                            //Temp table that is wiped after the end of session
+    order_id integer,
+    product string,
+    quantity integer,
+    price integer,
+    order_date date,
+    purchase_address string
+);
+
+COPY INTO demo_sales_data                                           //Getting data from the external stage
+from @demo_aws_storage/SalesData.csv 
+file_format = (format_name = demo_format);                          //Only required if you need to specify the format
+
+Select * from demo_sales_data
+limit 10;
+
+
+-- Scenario : 1 Load all files from stage but skip files w/ errors
+
+COPY INTO demo_sales_data
+from @demo_aws_storage/ 
+file_format = (format_name = demo_format) 
+on_error = 'Skip_file';                                             //Skips the entire file
+
+
+-- Scenario : 2 Load all files from stage but skip specific records
+-- on error and not the whole file
+
+COPY INTO demo_sales_data
+from @demo_aws_storage/ 
+file_format = (format_name = demo_format) 
+on_error = 'Continue';                                             //Skips only bad records and keeps the rest
+
+                                                                   // on_error = 'Abort' will abort the whole process
+-- Scenario : 3 You need to load in the same data again
+-- COPY keeps memory for a certain time limit of all the records you have loaded in
+-- and prevents you from loading in duplicate ones
+-- Can you the parameter FORCE in this case
+-- Generates duplicate data so have to be cautious
+COPY INTO demo_sales_data
+from @demo_aws_storage/SalesData.csv 
+file_format = (error_on_column_count_mismatch = false) 
+force = true;
+
+
+-- Scenario : 4 You want to delete file after loading in the data
+-- Can use the parameter PURGE to remove from stage/AWS
+COPY INTO demo_sales_data
+from @demo_aws_storage/SalesData.csv 
+file_format = (error_on_column_count_mismatch = false) 
+purge = true;
